@@ -9,6 +9,13 @@ import torch.distributed as dist
 
 from kernel import act_quant, weight_dequant, fp8_gemm
 
+"""Core model components for running the DeepSeek Transformer.
+
+This module contains model argument definitions, parallel embedding and
+linear layers, attention blocks, mixture-of-experts logic and the final
+``Transformer`` class used for inference.
+"""
+
 
 world_size = 1
 rank = 0

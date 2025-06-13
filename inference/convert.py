@@ -7,6 +7,12 @@ from tqdm import tqdm, trange
 import torch
 from safetensors.torch import safe_open, save_file
 
+"""Convert Hugging Face checkpoints into the format used by this project.
+
+Weights are sharded across model-parallel ranks and saved in the
+``safetensors`` format for efficient loading during inference.
+"""
+
 
 mapping = {
     "embed_tokens": ("embed", 0),

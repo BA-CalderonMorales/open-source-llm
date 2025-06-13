@@ -10,6 +10,13 @@ from safetensors.torch import load_model
 
 from model import Transformer, ModelArgs
 
+"""Utilities for generating text with the Transformer model.
+
+This script provides interactive and batch generation modes, handles
+distributed setup and performs token sampling using temperature-based
+techniques.
+"""
+
 
 def sample(logits, temperature: float = 1.0):
     """
