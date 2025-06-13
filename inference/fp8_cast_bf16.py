@@ -7,6 +7,8 @@ from tqdm import tqdm
 import torch
 from safetensors.torch import load_file, save_file
 
+"""Convert FP8 weights to BF16 for hardware without FP8 support."""
+
 from kernel import weight_dequant
 
 def main(fp8_path, bf16_path):

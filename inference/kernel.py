@@ -5,6 +5,13 @@ import triton
 import triton.language as tl
 from triton import Config
 
+"""Triton kernels for quantization and FP8 matrix multiplication.
+
+The functions defined here implement activation quantization, weight
+dequantization and a high performance FP8 GEMM routine used by the
+Transformer model during inference.
+"""
+
 
 @triton.jit
 def act_quant_kernel(x_ptr, y_ptr, s_ptr, BLOCK_SIZE: tl.constexpr):
