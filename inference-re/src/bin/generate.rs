@@ -19,12 +19,12 @@ impl GenerateApp {
     }
 
     /// Generate tokens for a prompt.
-    pub fn generate(&self, prompt: &[i64], max_new: usize) -> Vec<i64> {
+    pub fn generate(&self, prompt: &[usize], max_new: usize) -> Vec<usize> {
 
         let mut rng = rand::thread_rng();
         let mut tokens = prompt.to_vec();
         for _ in 0..max_new {
-            let next: i64 = rng.gen_range(0..self.model.args.vocab_size as i64);
+            let next: usize = rng.gen_range(0..self.model.args.vocab_size);
             tokens.push(next);
         }
         tokens
@@ -36,7 +36,7 @@ fn main() {
     let args = ModelArgs::new();
     let model = Transformer::new(args.clone());
     let app = GenerateApp::new(model);
-    let prompt = vec![0_i64];
+    let prompt = vec![0_usize];
     let out = app.generate(&prompt, 5);
     println!("generated: {:?}", out);
 
