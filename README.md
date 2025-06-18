@@ -27,3 +27,7 @@ This project builds on work from the [DeepSeek-AI team](https://github.com/deeps
 ## Contact
 
 Questions and feedback are welcome through issues. For official support please visit [DeepSeek-AI](https://www.deepseek.com/).
+
+## Release Notes
+
+Release notes are automatically drafted from merged pull requests using the [Release Drafter GitHub Action](https://github.com/marketplace/actions/release-drafter). Check the "Releases" section on GitHub to see what has changed between versions.
