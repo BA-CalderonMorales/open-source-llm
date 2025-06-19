@@ -9,3 +9,9 @@ ndarray = "0.15"
 inference-re = { path = "../inference-re" }
 bytemuck = { version = "1.14", features = ["derive"] }
 memmap2 = "0.5"
+
+[lib]
+path = "src/lib.rs"
+
+[dev-dependencies]
+tempfile = "3"

@@ -14,7 +14,9 @@ jobs:
         with:
           toolchain: stable
           override: true
-      - name: Run tests
+      - name: Run inference-re tests
         run: cargo test --manifest-path inference-re/Cargo.toml
+      - name: Run mobile tests
+        run: cargo test --manifest-path mobile/Cargo.toml
       - name: Build mobile crate
         run: cargo build --release --manifest-path mobile/Cargo.toml
