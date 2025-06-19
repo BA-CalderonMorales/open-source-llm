@@ -51,6 +51,34 @@ let ids = tokenizer.encode("hello world");
 let text = tokenizer.decode(&ids);
 ```
 
+### C FFI
+
+The library exposes a small C-compatible API for integration with native mobile
+applications. Build the crate as a `cdylib` to obtain a shared library.
+
+```bash
+cargo build --release --manifest-path mobile/Cargo.toml
+```
+
+Key functions include:
+
+```c
+QTransformer* mobile_model_load(const char* path);
+void mobile_model_free(QTransformer* model);
+TokenArray mobile_generate(QTransformer* model, const size_t* ids,
+                           size_t len, size_t max_tokens);
+void token_array_free(TokenArray arr);
+
+Tokenizer* tokenizer_new(const char* const* tokens, size_t len);
+void tokenizer_free(Tokenizer* t);
+TokenArray tokenizer_encode(Tokenizer* t, const char* text);
+char* tokenizer_decode(Tokenizer* t, const size_t* ids, size_t len);
+void string_free(char* s);
+```
+
+The `TokenArray` struct holds a pointer and length for arrays returned by the
+library. Call the corresponding `*_free` functions to release allocated memory.
+
 ## Limitations
 
 This example quantizes only a toy model and does not load external checkpoints. Adapting it for real-world models like the DeepSeek distilled series will require significant additional work.

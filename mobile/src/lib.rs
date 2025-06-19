@@ -203,6 +203,133 @@ pub fn demo_quantize(path: &PathBuf) -> std::io::Result<()> {
     q.save(path)
 }
 
+// === FFI ===
+use std::ffi::{CStr, CString};
+use std::os::raw::c_char;
+
+#[repr(C)]
+pub struct TokenArray {
+    pub ptr: *mut usize,
+    pub len: usize,
+}
+
+#[no_mangle]
+pub extern "C" fn token_array_free(arr: TokenArray) {
+    if !arr.ptr.is_null() {
+        unsafe {
+            Vec::from_raw_parts(arr.ptr, arr.len, arr.len);
+        }
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn string_free(ptr: *mut c_char) {
+    if !ptr.is_null() {
+        unsafe {
+            drop(CString::from_raw(ptr));
+        }
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn mobile_model_load(path: *const c_char) -> *mut QTransformer {
+    if path.is_null() {
+        return std::ptr::null_mut();
+    }
+    let cstr = unsafe { CStr::from_ptr(path) };
+    let path = PathBuf::from(cstr.to_string_lossy().into_owned());
+    match QTransformer::load(&path) {
+        Ok(m) => Box::into_raw(Box::new(m)),
+        Err(_) => std::ptr::null_mut(),
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn mobile_model_free(model: *mut QTransformer) {
+    if !model.is_null() {
+        unsafe {
+            drop(Box::from_raw(model));
+        }
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn mobile_generate(
+    model: *mut QTransformer,
+    tokens: *const usize,
+    len: usize,
+    max_tokens: usize,
+) -> TokenArray {
+    if model.is_null() || tokens.is_null() {
+        return TokenArray { ptr: std::ptr::null_mut(), len: 0 };
+    }
+    let model = unsafe { &mut *model };
+    let input = unsafe { std::slice::from_raw_parts(tokens, len) };
+    let out = model.generate(input, max_tokens);
+    let len = out.len();
+    let mut slice = out.into_boxed_slice();
+    let ptr = slice.as_mut_ptr();
+    std::mem::forget(slice);
+    TokenArray { ptr, len }
+}
+
+#[no_mangle]
+pub extern "C" fn tokenizer_new(tokens: *const *const c_char, len: usize) -> *mut Tokenizer {
+    if tokens.is_null() {
+        return std::ptr::null_mut();
+    }
+    let slice = unsafe { std::slice::from_raw_parts(tokens, len) };
+    let mut vec = Vec::with_capacity(len);
+    for &ptr in slice {
+        if ptr.is_null() {
+            return std::ptr::null_mut();
+        }
+        let s = unsafe { CStr::from_ptr(ptr).to_string_lossy().into_owned() };
+        vec.push(s);
+    }
+    Box::into_raw(Box::new(Tokenizer::new(vec)))
+}
+
+#[no_mangle]
+pub extern "C" fn tokenizer_free(t: *mut Tokenizer) {
+    if !t.is_null() {
+        unsafe { drop(Box::from_raw(t)); }
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn tokenizer_encode(
+    tokenizer: *mut Tokenizer,
+    text: *const c_char,
+) -> TokenArray {
+    if tokenizer.is_null() || text.is_null() {
+        return TokenArray { ptr: std::ptr::null_mut(), len: 0 };
+    }
+    let tok = unsafe { &mut *tokenizer };
+    let text = unsafe { CStr::from_ptr(text).to_string_lossy() };
+    let out = tok.encode(&text);
+    let len = out.len();
+    let mut slice = out.into_boxed_slice();
+    let ptr = slice.as_mut_ptr();
+    std::mem::forget(slice);
+    TokenArray { ptr, len }
+}
+
+#[no_mangle]
+pub extern "C" fn tokenizer_decode(
+    tokenizer: *mut Tokenizer,
+    tokens: *const usize,
+    len: usize,
+) -> *mut c_char {
+    if tokenizer.is_null() || tokens.is_null() {
+        return std::ptr::null_mut();
+    }
+    let tok = unsafe { &mut *tokenizer };
+    let slice = unsafe { std::slice::from_raw_parts(tokens, len) };
+    let text = tok.decode(slice);
+    CString::new(text).unwrap().into_raw()
+}
+
 /// Simple whitespace tokenizer backed by a fixed vocabulary.
 pub struct Tokenizer {
     vocab: HashMap<String, usize>,
