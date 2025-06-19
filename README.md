@@ -16,6 +16,18 @@ This repository is a personal fork of the official [DeepSeek-V3](https://github.
 
 Setup largely follows the instructions from the official project. Refer to their documentation for installation and usage details. This fork may contain experimental changes.
 
+## Potential Use Cases
+
+This fork demonstrates how large language models can be adapted for local-first scenarios. Typical legitimate uses include:
+
+- Personal assistants and note taking on a laptop or mobile device.
+- Offline text summarization or question answering where network access is limited.
+- Experimenting with quantization and pruning to fit smaller models (1.5B--7B parameters) into a few gigabytes of RAM.
+- Educational exploration of how transformers work under constrained hardware.
+
+### Mobile Deployment Edge Cases
+
+Running the full DeepSeek-V3 model on a phone is unrealistic: the 671B parameter version requires hundreds of gigabytes of memory. Phones may, however, run a distilled or heavily quantized model. Expect reduced accuracy, slower responses, and significant battery usage. These experiments are best suited to high-end devices and remain experimental.
 ## License
 
 The code in this repository is released under the [MIT License](LICENSE-CODE). Usage of DeepSeek-V3 models is governed by the [Model License](LICENSE-MODEL).
