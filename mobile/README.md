@@ -37,6 +37,20 @@ let logits = model.forward(&tokens);
 let generated = model.generate(&tokens, 4);
 ```
 
+### Tokenization
+
+The `Tokenizer` type handles simple whitespace tokenization. Create it from a
+list of tokens and use `encode` and `decode` to convert between text and token
+ids.
+
+```rust
+use mobile::Tokenizer;
+
+let tokenizer = Tokenizer::new(vec!["<unk>".into(), "hello".into(), "world".into()]);
+let ids = tokenizer.encode("hello world");
+let text = tokenizer.decode(&ids);
+```
+
 ## Limitations
 
 This example quantizes only a toy model and does not load external checkpoints. Adapting it for real-world models like the DeepSeek distilled series will require significant additional work.

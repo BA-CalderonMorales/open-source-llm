@@ -1,6 +1,6 @@
 use inference_re::model::{ModelArgs, Transformer, Linear, Embedding};
 use ndarray::{Array1, Array2, Axis};
-use std::{fs::File, io::Write, path::PathBuf};
+use std::{collections::HashMap, fs::File, io::Write, path::PathBuf};
 use bytemuck::cast_slice;
 use memmap2::MmapOptions;
 
@@ -201,4 +201,45 @@ pub fn demo_quantize(path: &PathBuf) -> std::io::Result<()> {
     let model = Transformer::new(ModelArgs::new());
     let q = QTransformer::from_model(&model);
     q.save(path)
+}
+
+/// Simple whitespace tokenizer backed by a fixed vocabulary.
+pub struct Tokenizer {
+    vocab: HashMap<String, usize>,
+    inv_vocab: Vec<String>,
+    unk_id: usize,
+}
+
+impl Tokenizer {
+    /// Create a tokenizer from a list of tokens. The first entry is used as
+    /// the unknown token.
+    pub fn new(tokens: Vec<String>) -> Self {
+        let mut vocab = HashMap::with_capacity(tokens.len());
+        for (i, tok) in tokens.iter().enumerate() {
+            vocab.insert(tok.clone(), i);
+        }
+        Self { vocab, inv_vocab: tokens, unk_id: 0 }
+    }
+
+    /// Encode a string into token ids using whitespace splitting. Unknown
+    /// tokens map to the `unk` id.
+    pub fn encode(&self, text: &str) -> Vec<usize> {
+        text.split_whitespace()
+            .map(|s| self.vocab.get(s).cloned().unwrap_or(self.unk_id))
+            .collect()
+    }
+
+    /// Decode token ids back into a space separated string.
+    pub fn decode(&self, tokens: &[usize]) -> String {
+        tokens
+            .iter()
+            .map(|&id| {
+                self.inv_vocab
+                    .get(id)
+                    .map(|s| s.as_str())
+                    .unwrap_or(&self.inv_vocab[self.unk_id])
+            })
+            .collect::<Vec<_>>()
+            .join(" ")
+    }
 }
