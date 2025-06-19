@@ -3,6 +3,7 @@ use inference_re::model::{ModelArgs, Transformer, Linear, Embedding};
 use ndarray::{Array1, Array2};
 use std::{fs::File, io::Write, path::PathBuf};
 use bytemuck::cast_slice;
+use memmap2::MmapOptions;
 
 /// Simple quantization of a tensor to 8-bit integers with a scale factor.
 fn quantize_tensor(t: &Array2<f32>) -> (Vec<i8>, f32) {
@@ -32,6 +33,35 @@ impl QLinear {
             out_features: l.weight().nrows(),
         }
     }
+
+    fn from_mmap(buf: &[u8]) -> (Self, usize) {
+        let mut offset = 0;
+        let out_features = u32::from_le_bytes(buf[offset..offset + 4].try_into().unwrap()) as usize;
+        offset += 4;
+        let in_features = u32::from_le_bytes(buf[offset..offset + 4].try_into().unwrap()) as usize;
+        offset += 4;
+        let scale = f32::from_le_bytes(buf[offset..offset + 4].try_into().unwrap());
+        offset += 4;
+        let weight_len = out_features * in_features;
+        let weight = buf[offset..offset + weight_len].iter().map(|&b| b as i8).collect();
+        offset += weight_len;
+        let has_bias = buf[offset] == 1;
+        offset += 1;
+        let bias = if has_bias {
+            let mut b = Vec::with_capacity(out_features);
+            for _ in 0..out_features {
+                b.push(f32::from_le_bytes(buf[offset..offset + 4].try_into().unwrap()));
+                offset += 4;
+            }
+            Some(Array1::from(b))
+        } else {
+            None
+        };
+        (
+            Self { weight, bias, scale, in_features, out_features },
+            offset,
+        )
+    }
 }
 
 /// Quantized embedding layer.
@@ -46,6 +76,23 @@ impl QEmbedding {
     fn from_embedding(e: &Embedding) -> Self {
         let (weight, scale) = quantize_tensor(e.weight());
         Self { weight, scale, vocab: e.weight().nrows(), dim: e.weight().ncols() }
+    }
+
+    fn from_mmap(buf: &[u8]) -> (Self, usize) {
+        let mut offset = 0;
+        let vocab = u32::from_le_bytes(buf[offset..offset + 4].try_into().unwrap()) as usize;
+        offset += 4;
+        let dim = u32::from_le_bytes(buf[offset..offset + 4].try_into().unwrap()) as usize;
+        offset += 4;
+        let scale = f32::from_le_bytes(buf[offset..offset + 4].try_into().unwrap());
+        offset += 4;
+        let weight_len = vocab * dim;
+        let weight = buf[offset..offset + weight_len].iter().map(|&b| b as i8).collect();
+        offset += weight_len;
+        (
+            Self { weight, scale, vocab, dim },
+            offset,
+        )
     }
 }
 
@@ -82,6 +129,15 @@ impl QTransformer {
             f.write_all(&0u8.to_le_bytes())?;
         }
         Ok(())
+    }
+
+    fn load_mmap(path: &PathBuf) -> std::io::Result<Self> {
+        let file = File::open(path)?;
+        let mmap = unsafe { MmapOptions::new().map(&file)? };
+        let bytes = &mmap[..];
+        let (embed, off) = QEmbedding::from_mmap(bytes);
+        let (head, _) = QLinear::from_mmap(&bytes[off..]);
+        Ok(Self { embed, head })
     }
 }
 
