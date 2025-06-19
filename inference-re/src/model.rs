@@ -57,6 +57,11 @@ impl Embedding {
         }
         out
     }
+
+    /// Access underlying weight matrix.
+    pub fn weight(&self) -> &Array2<f32> {
+        &self.weight
+    }
 }
 
 /// Fully connected layer.
@@ -83,6 +88,16 @@ impl Linear {
             y += &b.view().insert_axis(Axis(0));
         }
         y
+    }
+
+    /// Access weight matrix.
+    pub fn weight(&self) -> &Array2<f32> {
+        &self.weight
+    }
+
+    /// Access bias vector, if present.
+    pub fn bias(&self) -> Option<&Array1<f32>> {
+        self.bias.as_ref()
     }
 }
 
@@ -251,6 +266,16 @@ impl Transformer {
         }
         let h = self.norm.forward(&h);
         self.head.forward(&h)
+    }
+
+    /// Access embedding layer.
+    pub fn embed(&self) -> &Embedding {
+        &self.embed
+    }
+
+    /// Access output head.
+    pub fn head(&self) -> &Linear {
+        &self.head
     }
 }
 
