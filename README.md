@@ -28,6 +28,10 @@ This fork demonstrates how large language models can be adapted for local-first 
 ### Mobile Deployment Edge Cases
 
 Running the full DeepSeek-V3 model on a phone is unrealistic: the 671B parameter version requires hundreds of gigabytes of memory. Phones may, however, run a distilled or heavily quantized model. Expect reduced accuracy, slower responses, and significant battery usage. These experiments are best suited to high-end devices and remain experimental.
+
+### Mobile Tools
+
+This repository now ships a small Rust program under `mobile/` that demonstrates quantizing the example model for use on phones. See [`mobile/README.md`](mobile/README.md) for build instructions.
 ## License
 
 The code in this repository is released under the [MIT License](LICENSE-CODE). Usage of DeepSeek-V3 models is governed by the [Model License](LICENSE-MODEL).

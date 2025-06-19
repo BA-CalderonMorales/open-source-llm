@@ -16,3 +16,5 @@ jobs:
           override: true
       - name: Run tests
         run: cargo test --manifest-path inference-re/Cargo.toml
+      - name: Build mobile crate
+        run: cargo build --release --manifest-path mobile/Cargo.toml
