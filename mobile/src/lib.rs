@@ -4,6 +4,9 @@ use std::{collections::HashMap, fs::File, io::Write, path::PathBuf};
 use bytemuck::cast_slice;
 use memmap2::MmapOptions;
 
+pub mod ffi;
+pub use ffi::*;
+
 /// Simple quantization of a tensor to 8-bit integers with a scale factor.
 fn quantize_tensor(t: &Array2<f32>) -> (Vec<i8>, f32) {
     let max = t.iter().fold(0.0_f32, |m, &v| m.max(v.abs()));
