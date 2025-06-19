@@ -1,6 +1,6 @@
 # Mobile Deployment Guide
 
-This folder now contains a lightweight Rust tool for quantizing the demo transformer model from this repository. The resulting file can be loaded by custom mobile runtimes.
+This folder now contains a lightweight Rust library and binary for quantizing the demo transformer model from this repository. The resulting file can be loaded and executed by custom mobile runtimes.
 
 ## Build
 
@@ -28,6 +28,14 @@ let model = QTransformer::load_mmap(&PathBuf::from("quantized.bin"))?;
 ```
 
 This avoids reading the entire file at once and reduces peak memory usage.
+
+Once loaded, you can run a forward pass or generate tokens:
+
+```rust
+let tokens = vec![1_usize, 2, 3];
+let logits = model.forward(&tokens);
+let generated = model.generate(&tokens, 4);
+```
 
 ## Limitations
 
