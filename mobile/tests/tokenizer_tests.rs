@@ -19,3 +19,18 @@ fn unknown_token() {
     let text = tokenizer.decode(&ids);
     assert_eq!(text, "<unk>");
 }
+
+#[test]
+fn vocab_size_reports_number_of_tokens() {
+    let tokens = vec!["<unk>".to_string(), "foo".to_string(), "bar".to_string()];
+    let tokenizer = Tokenizer::new(tokens);
+    assert_eq!(tokenizer.vocab_size(), 3);
+}
+
+#[test]
+fn contains_checks_presence() {
+    let tokens = vec!["<unk>".to_string(), "foo".to_string()];
+    let tokenizer = Tokenizer::new(tokens);
+    assert!(tokenizer.contains("foo"));
+    assert!(!tokenizer.contains("bar"));
+}

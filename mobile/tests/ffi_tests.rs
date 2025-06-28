@@ -39,8 +39,44 @@ fn ffi_model_and_tokenizer() {
         string_free(decoded_ptr);
         token_array_free(ids);
         token_array_free(generated);
+        assert_eq!(tokenizer_vocab_size(tok), 3);
         tokenizer_free(tok);
         mobile_model_free(m);
+    }
+}
+
+#[test]
+fn ffi_tokenizer_vocab_size() {
+    unsafe {
+        let vocab = [
+            CString::new("<unk>").unwrap(),
+            CString::new("a").unwrap(),
+            CString::new("b").unwrap(),
+            CString::new("c").unwrap(),
+        ];
+        let ptrs: Vec<*const c_char> = vocab.iter().map(|s| s.as_ptr()).collect();
+        let tok = tokenizer_new(ptrs.as_ptr(), ptrs.len());
+        assert!(!tok.is_null());
+        assert_eq!(tokenizer_vocab_size(tok), 4);
+        tokenizer_free(tok);
+    }
+}
+
+#[test]
+fn ffi_tokenizer_contains() {
+    unsafe {
+        let vocab = [
+            CString::new("<unk>").unwrap(),
+            CString::new("hello").unwrap(),
+        ];
+        let ptrs: Vec<*const c_char> = vocab.iter().map(|s| s.as_ptr()).collect();
+        let tok = tokenizer_new(ptrs.as_ptr(), ptrs.len());
+        assert!(!tok.is_null());
+        let ok = CString::new("hello").unwrap();
+        assert!(tokenizer_contains(tok, ok.as_ptr()));
+        let missing = CString::new("world").unwrap();
+        assert!(!tokenizer_contains(tok, missing.as_ptr()));
+        tokenizer_free(tok);
     }
 }
 

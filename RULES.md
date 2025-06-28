@@ -5,22 +5,16 @@ These rules keep development consistent across the project. The document is inte
 ## General Principles
 
 - Follow Test-Driven Development. Write tests before production code and keep changes small.
-- Use strict TypeScript and prefer immutable patterns.
+- Prefer immutable data structures and avoid side effects.
 - When looking for solutions, consult **context7** and the guidance in **MEMORY.md**. Do not copy text from MEMORY.md into this file.
 
 ## Local Workflow
 
-Use these npm scripts during feature work:
+Development spans Python and Rust. Set up a virtual environment and install Python dependencies with `pip install -r inference/requirements.txt`. Run `pytest` for Python tests.
 
-- `npm ci` – install dependencies
-- `npm start` – run the Metro bundler
-- `npm run ios` – run the iOS app
-- `npm run android` – run the Android app
-- `npm test` – run the full test suite
-- `npm run typecheck` – run TypeScript checks
-- `npm run build` – build release artifacts with Fastlane
+Rust code lives under `mobile/` and `inference-re/`. Use `cargo test --manifest-path <crate>/Cargo.toml` to run tests and `cargo build --release --manifest-path <crate>/Cargo.toml` to build release artifacts.
 
-Run `npm ci`, `npm test`, `npm run typecheck`, and `npm run build` before pushing changes. CI uses the same commands.
+Run all tests and builds locally before pushing changes.
 
 ## Commit Standards
 
@@ -48,6 +42,6 @@ After merging into `develop`, automatically open a PR that merges `develop` into
 
 ## Continuous Integration
 
-All dependencies must be installed with `npm ci` in CI jobs. The Super-Linter runs on every pull request via `.github/workflows/super-linter.yml`.
+Continuous integration runs Rust unit tests and builds on every pull request using `.github/workflows/rust.yml`. Python tests run with `pytest` when present.
 
-Ensure rules include to find ways to mitigate any current superlinter failures as we continue to make incremental changes. However, failures should not mean we break existing functionality and the way the UI looks today. Take a balanced approach here.
+If the linter reports issues, fix them incrementally without breaking existing functionality.
