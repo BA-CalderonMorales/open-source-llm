@@ -80,3 +80,17 @@ fn ffi_tokenizer_contains() {
     }
 }
 
+#[test]
+fn ffi_tokenizer_token_id() {
+    unsafe {
+        let vocab = [CString::new("<unk>").unwrap(), CString::new("x").unwrap()];
+        let ptrs: Vec<*const c_char> = vocab.iter().map(|s| s.as_ptr()).collect();
+        let tok = tokenizer_new(ptrs.as_ptr(), ptrs.len());
+        assert!(!tok.is_null());
+        let token = CString::new("x").unwrap();
+        assert_eq!(tokenizer_token_id(tok, token.as_ptr()), 1);
+        let missing = CString::new("y").unwrap();
+        assert_eq!(tokenizer_token_id(tok, missing.as_ptr()), -1);
+        tokenizer_free(tok);
+    }
+}

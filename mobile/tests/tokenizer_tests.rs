@@ -2,7 +2,11 @@ use mobile::Tokenizer;
 
 #[test]
 fn encode_decode_roundtrip() {
-    let tokens = vec!["<unk>".to_string(), "hello".to_string(), "world".to_string()];
+    let tokens = vec![
+        "<unk>".to_string(),
+        "hello".to_string(),
+        "world".to_string(),
+    ];
     let tokenizer = Tokenizer::new(tokens);
     let ids = tokenizer.encode("hello world");
     assert_eq!(ids, vec![1, 2]);
@@ -33,4 +37,12 @@ fn contains_checks_presence() {
     let tokenizer = Tokenizer::new(tokens);
     assert!(tokenizer.contains("foo"));
     assert!(!tokenizer.contains("bar"));
+}
+
+#[test]
+fn token_id_returns_some_when_present() {
+    let tokens = vec!["<unk>".to_string(), "a".to_string(), "b".to_string()];
+    let tokenizer = Tokenizer::new(tokens);
+    assert_eq!(tokenizer.token_id("b"), Some(2));
+    assert_eq!(tokenizer.token_id("missing"), None);
 }
