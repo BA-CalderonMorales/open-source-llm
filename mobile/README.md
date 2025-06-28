@@ -40,8 +40,8 @@ let generated = model.generate(&tokens, 4);
 ### Tokenization
 
 The `Tokenizer` type handles simple whitespace tokenization. Create it from a
-list of tokens and use `encode` and `decode` to convert between text and token
-ids.
+list of tokens and use methods like `encode`, `decode`, and `vocab_size` to work
+with token ids.
 
 ```rust
 use mobile::Tokenizer;
@@ -49,6 +49,8 @@ use mobile::Tokenizer;
 let tokenizer = Tokenizer::new(vec!["<unk>".into(), "hello".into(), "world".into()]);
 let ids = tokenizer.encode("hello world");
 let text = tokenizer.decode(&ids);
+let vocab_size = tokenizer.vocab_size();
+let has_token = tokenizer.contains("hello");
 ```
 
 ### C FFI
@@ -73,6 +75,8 @@ Tokenizer* tokenizer_new(const char* const* tokens, size_t len);
 void tokenizer_free(Tokenizer* t);
 TokenArray tokenizer_encode(Tokenizer* t, const char* text);
 char* tokenizer_decode(Tokenizer* t, const size_t* ids, size_t len);
+size_t tokenizer_vocab_size(Tokenizer* t);
+bool tokenizer_contains(Tokenizer* t, const char* token);
 void string_free(char* s);
 ```
 

@@ -18,6 +18,33 @@ I follow Test-Driven Development (TDD) with a strong emphasis on behavior-driven
 - TypeScript strict mode always
 - Use real schemas/types in tests, never redefine them
 
+## Repository Overview
+
+This project is an experimental reimplementation of the DeepSeek large language model.
+Key components:
+
+- `inference/` – Python code for running a simplified Transformer model.
+- `mobile/` – Rust library that quantizes weights and exposes a C-compatible API for mobile apps.
+- `inference-re/` – Minimal Rust version of the inference stack used mainly for tests.
+
+### Current State
+
+- Basic model forward pass and token generation utilities exist for both Python and Rust.
+- Mobile crate supports saving and loading quantized weights and simple tokenization.
+- Continuous integration only runs Rust tests; Python tests are optional.
+
+### Limitations
+
+- No GPU support in CI; heavy dependencies like PyTorch must be installed manually.
+- The Python model lacks unit tests and advanced features from the original DeepSeek implementation.
+- FFI bindings are minimal and primarily intended for demonstration.
+
+### Roadmap Ideas
+
+- Improve Python coverage with lightweight CPU-friendly tests.
+- Expand the mobile API with additional tokenization helpers.
+- Investigate simple optimizations (e.g., mmap weights) for faster startup.
+
 **Preferred Tools:**
 
 - **Language**: TypeScript (strict mode)

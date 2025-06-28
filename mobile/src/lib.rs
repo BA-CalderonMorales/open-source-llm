@@ -333,6 +333,28 @@ pub extern "C" fn tokenizer_decode(
     CString::new(text).unwrap().into_raw()
 }
 
+#[no_mangle]
+pub extern "C" fn tokenizer_vocab_size(tokenizer: *mut Tokenizer) -> usize {
+    if tokenizer.is_null() {
+        return 0;
+    }
+    let tok = unsafe { &mut *tokenizer };
+    tok.vocab_size()
+}
+
+#[no_mangle]
+pub extern "C" fn tokenizer_contains(
+    tokenizer: *mut Tokenizer,
+    token: *const c_char,
+) -> bool {
+    if tokenizer.is_null() || token.is_null() {
+        return false;
+    }
+    let tok = unsafe { &mut *tokenizer };
+    let text = unsafe { CStr::from_ptr(token).to_string_lossy() };
+    tok.contains(&text)
+}
+
 /// Simple whitespace tokenizer backed by a fixed vocabulary.
 pub struct Tokenizer {
     vocab: HashMap<String, usize>,
@@ -371,5 +393,16 @@ impl Tokenizer {
             })
             .collect::<Vec<_>>()
             .join(" ")
+    }
+
+    /// Return the number of tokens in the vocabulary.
+    pub fn vocab_size(&self) -> usize {
+        self.inv_vocab.len()
+    }
+
+    /// Check if a token exists in the vocabulary.
+    #[inline]
+    pub fn contains(&self, token: &str) -> bool {
+        self.vocab.contains_key(token)
     }
 }
