@@ -51,6 +51,7 @@ let ids = tokenizer.encode("hello world");
 let text = tokenizer.decode(&ids);
 let vocab_size = tokenizer.vocab_size();
 let has_token = tokenizer.contains("hello");
+let maybe_id = tokenizer.token_id("world");
 ```
 
 ### C FFI
@@ -77,6 +78,7 @@ TokenArray tokenizer_encode(Tokenizer* t, const char* text);
 char* tokenizer_decode(Tokenizer* t, const size_t* ids, size_t len);
 size_t tokenizer_vocab_size(Tokenizer* t);
 bool tokenizer_contains(Tokenizer* t, const char* token);
+isize tokenizer_token_id(Tokenizer* t, const char* token);
 void string_free(char* s);
 ```
 

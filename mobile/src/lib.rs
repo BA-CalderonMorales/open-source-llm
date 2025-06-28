@@ -355,6 +355,19 @@ pub extern "C" fn tokenizer_contains(
     tok.contains(&text)
 }
 
+#[no_mangle]
+pub extern "C" fn tokenizer_token_id(
+    tokenizer: *mut Tokenizer,
+    token: *const c_char,
+) -> isize {
+    if tokenizer.is_null() || token.is_null() {
+        return -1;
+    }
+    let tok = unsafe { &mut *tokenizer };
+    let text = unsafe { CStr::from_ptr(token).to_string_lossy() };
+    tok.token_id(&text).map(|id| id as isize).unwrap_or(-1)
+}
+
 /// Simple whitespace tokenizer backed by a fixed vocabulary.
 pub struct Tokenizer {
     vocab: HashMap<String, usize>,
@@ -404,5 +417,11 @@ impl Tokenizer {
     #[inline]
     pub fn contains(&self, token: &str) -> bool {
         self.vocab.contains_key(token)
+    }
+
+    /// Get the id of a token if it exists in the vocabulary.
+    #[inline]
+    pub fn token_id(&self, token: &str) -> Option<usize> {
+        self.vocab.get(token).cloned()
     }
 }
