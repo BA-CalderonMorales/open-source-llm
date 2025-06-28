@@ -32,6 +32,9 @@ Key components:
 - Basic model forward pass and token generation utilities exist for both Python and Rust.
 - Mobile crate supports saving and loading quantized weights and simple tokenization.
 - Continuous integration only runs Rust tests; Python tests are optional.
+- The project does not use Node.js. No `package.json` or `package-lock.json`
+  files exist, so skip `npm ci`, `npm test`, `npm run typecheck`, and
+  `npm run build`.
 
 ### Limitations
 
@@ -967,9 +970,8 @@ const validatePaymentAmount = (amount: number): void => {
 
 ```bash
 # After refactoring
-npm test          # All tests must pass
-npm run lint      # All linting must pass
-npm run typecheck # TypeScript must be happy
+cargo test --workspace  # All Rust tests must pass
+pytest                  # All Python tests must pass
 
 # Only then commit
 git add .
@@ -1098,10 +1100,10 @@ const applyDiscount = (price: number, discountRate: number): number => {
 
 ### Pre-commit Hooks
 
-Use the included `.pre-commit-config.yaml` to run `npm test` and commitlint on every commit. Install hooks with:
+Use `pre-commit` to run tests and commitlint on every commit. Install hooks with:
 
 ```bash
-npx pre-commit install
+pre-commit install
 ```
 
 Commits will be blocked if tests fail or commit messages do not follow the conventional format.
