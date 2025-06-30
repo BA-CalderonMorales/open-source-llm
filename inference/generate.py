@@ -18,18 +18,25 @@ techniques.
 """
 
 
-def sample(logits, temperature: float = 1.0):
+def sample(logits, temperature: float = 1.0, top_k: int | None = None):
     """
     Samples a token from the logits using temperature scaling.
 
     Args:
         logits (torch.Tensor): The logits tensor for token predictions.
         temperature (float, optional): Temperature for scaling logits. Defaults to 1.0.
+        top_k (int, optional): Restrict sampling to the top ``k`` tokens. ``None`` disables the constraint.
 
     Returns:
         torch.Tensor: The sampled token.
     """
     logits = logits / max(temperature, 1e-5)
+    if top_k is not None and top_k > 0:
+        k = min(top_k, logits.size(-1))
+        values, indices = logits.topk(k, dim=-1)
+        masked = torch.full_like(logits, float("-inf"))
+        masked.scatter_(dim=-1, index=indices, src=values)
+        logits = masked
     probs = torch.softmax(logits, dim=-1)
     return probs.div_(torch.empty_like(probs).exponential_(1)).argmax(dim=-1)
 
@@ -40,7 +47,8 @@ def generate(
     prompt_tokens: List[List[int]],
     max_new_tokens: int,
     eos_id: int,
-    temperature: float = 1.0
+    temperature: float = 1.0,
+    top_k: int | None = None
 ) -> List[List[int]]:
     """
     Generates new tokens based on the given prompt tokens using the specified model.
@@ -51,6 +59,7 @@ def generate(
         max_new_tokens (int): The maximum number of new tokens to generate.
         eos_id (int): The end-of-sequence token ID.
         temperature (float, optional): The temperature value for sampling. Defaults to 1.0.
+        top_k (int, optional): Restrict sampling to the top ``k`` tokens. ``None`` disables the constraint.
 
     Returns:
         List[List[int]]: A list of lists containing the generated tokens for each sequence.
@@ -67,7 +76,7 @@ def generate(
     for cur_pos in range(min(prompt_lens), total_len):
         logits = model.forward(tokens[:, prev_pos:cur_pos], prev_pos)
         if temperature > 0:
-            next_token = sample(logits, temperature)
+            next_token = sample(logits, temperature, top_k)
         else:
             next_token = logits.argmax(dim=-1)
         next_token = torch.where(prompt_mask[:, cur_pos], tokens[:, cur_pos], next_token)
@@ -92,6 +101,7 @@ def main(
     interactive: bool = True,
     max_new_tokens: int = 100,
     temperature: float = 1.0,
+    top_k: int | None = None,
 ) -> None:
     """
     Main function to load the model and perform interactive or batch text generation.
@@ -103,6 +113,7 @@ def main(
         interactive (bool, optional): Whether to run in interactive mode. Defaults to True.
         max_new_tokens (int, optional): Maximum number of new tokens to generate. Defaults to 100.
         temperature (float, optional): Temperature for sampling. Defaults to 1.0.
+        top_k (int, optional): Restrict sampling to the top ``k`` tokens during generation.
     """
     world_size = int(os.getenv("WORLD_SIZE", "1"))
     rank = int(os.getenv("RANK", "0"))
@@ -122,7 +133,7 @@ def main(
     with torch.cuda.device(local_rank):
         model = Transformer(args)
     tokenizer = AutoTokenizer.from_pretrained(ckpt_path)
-    tokenizer.decode(generate(model, [tokenizer.encode("DeepSeek")], 2, -1, 1.)[0])
+    tokenizer.decode(generate(model, [tokenizer.encode("DeepSeek")], 2, -1, 1., top_k)[0])
     load_model(model, os.path.join(ckpt_path, f"model{rank}-mp{world_size}.safetensors"))
 
     if interactive:
@@ -145,7 +156,7 @@ def main(
                 continue
             messages.append({"role": "user", "content": prompt})
             prompt_tokens = tokenizer.apply_chat_template(messages, add_generation_prompt=True)
-            completion_tokens = generate(model, [prompt_tokens], max_new_tokens, tokenizer.eos_token_id, temperature)
+            completion_tokens = generate(model, [prompt_tokens], max_new_tokens, tokenizer.eos_token_id, temperature, top_k)
             completion = tokenizer.decode(completion_tokens[0], skip_special_tokens=True)
             print(completion)
             messages.append({"role": "assistant", "content": completion})
@@ -154,7 +165,7 @@ def main(
             prompts = [line.strip() for line in f.readlines()]
         assert len(prompts) <= args.max_batch_size
         prompt_tokens = [tokenizer.apply_chat_template([{"role": "user", "content": prompt}], add_generation_prompt=True) for prompt in prompts]
-        completion_tokens = generate(model, prompt_tokens, max_new_tokens, tokenizer.eos_token_id, temperature)
+        completion_tokens = generate(model, prompt_tokens, max_new_tokens, tokenizer.eos_token_id, temperature, top_k)
         completions = tokenizer.batch_decode(completion_tokens, skip_special_tokens=True)
         for prompt, completion in zip(prompts, completions):
             print("Prompt:", prompt)
@@ -187,6 +198,15 @@ if __name__ == "__main__":
     parser.add_argument("--interactive", action="store_true")
     parser.add_argument("--max-new-tokens", type=int, default=200)
     parser.add_argument("--temperature", type=float, default=0.2)
+    parser.add_argument("--top-k", type=int, default=0)
     args = parser.parse_args()
     assert args.input_file or args.interactive
-    main(args.ckpt_path, args.config, args.input_file, args.interactive, args.max_new_tokens, args.temperature)
+    main(
+        args.ckpt_path,
+        args.config,
+        args.input_file,
+        args.interactive,
+        args.max_new_tokens,
+        args.temperature,
+        args.top_k if args.top_k > 0 else None,
+    )
