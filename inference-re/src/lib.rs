@@ -4,3 +4,4 @@
 //! inference utilities in a simplified form.
 
 pub mod model;
+pub mod context;
