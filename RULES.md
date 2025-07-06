@@ -7,6 +7,7 @@ These rules keep development consistent across the project. The document is inte
 - Follow Test-Driven Development. Write tests before production code and keep changes small.
 - Prefer immutable data structures and avoid side effects.
 - When looking for solutions, consult **context7** and the guidance in **MEMORY.md**. Do not copy text from MEMORY.md into this file.
+- Review the **Software Engineering Laws** in `MEMORY.md` when planning features and schedules.
 
 ## Local Workflow
 
